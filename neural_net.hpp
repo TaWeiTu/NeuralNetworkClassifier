@@ -13,15 +13,17 @@ template <typename T>
 struct neural_net {
     size_t inp_size, n_layer;
     std::vector<layer<T>> net;
+    T alpha;
 
     neural_net();
-    neural_net(const std::vector<size_t> &);
-    neural_net(const std::vector<size_t> &, const std::vector<std::function<T(T)>> &);
+    neural_net(const std::vector<size_t> &, T);
+    neural_net(const std::vector<size_t> &, const std::vector<std::function<T(T)>> &, T);
 
     matrix<T> forward(const matrix<T> &);
     void backprop(const std::vector<matrix<T>>&, const std::vector<int> &);
     T cost(const std::vector<matrix<T>> &, const std::vector<int> &);
     std::vector<int> predict(const std::vector<matrix<T>> &);
+    void update(const std::vector<matrix<T>> &);
 };
 
 
@@ -29,7 +31,7 @@ template <typename T>
 neural_net<T>::neural_net() {}
 
 template <typename T>
-neural_net<T>::neural_net(const std::vector<size_t> &nodes) {
+neural_net<T>::neural_net(const std::vector<size_t> &nodes, T alpha): alpha(alpha) {
     inp_size = nodes[0];
     net.emplace_back(0, 0);
     for (size_t i = 1; i < nodes.size(); ++i) 
@@ -38,7 +40,7 @@ neural_net<T>::neural_net(const std::vector<size_t> &nodes) {
 }
 
 template <typename T>
-neural_net<T>::neural_net(const std::vector<size_t> &nodes, const std::vector<std::function<T(T)>> &f) {
+neural_net<T>::neural_net(const std::vector<size_t> &nodes, const std::vector<std::function<T(T)>> &f, T alpha): alpha(alpha) {
     inp_size = nodes[0];
     net.emplace_back(0, 0);
     for (size_t i = 1; i < nodes.size(); ++i) 
@@ -59,19 +61,27 @@ matrix<T> neural_net<T>::forward(const matrix<T> &input) {
 
 template <typename T>
 void neural_net<T>::backprop(const std::vector<matrix<T>> &x, const std::vector<int> &y) {
+    std::vector<matrix<T>> dlt(n_layer);
+    for (size_t k = 0; k < n_layer; ++k) dlt[k] = zeros<T>(net[k].theta.n, net[k].theta.m);
     for (size_t k = 0; k < x.size(); ++k) {
         std::vector<matrix<T>> err(n_layer);
+        for (size_t i = 0; i < n_layer; ++i) err[i] = zeros<T>(net[i].nodes, 1);
         matrix<T> vy(x[k].n, x[k].m, [&](size_t r, size_t c) { return r == y[k]; });
         err[n_layer - 1] = forward(x[k]) - vy;
         for (size_t i = n_layer - 2; i >= 1; --i) {
             err[i] = net[i + 1].theta.transpose() * err[i + 1];        
             err[i] ^= (net[i].a ^ (ones<T>(net[i].a.n, net[i].a.m) - net[i].a));
         }
-        for (size_t i = n_layer - 1; i >= 1; --i) {
-            matrix<T> dlt = err[i] * net[i - 1].a.transpose();
-            net[i].theta += dlt;
-        }
+        for (size_t i = n_layer - 1; i >= 1; --i) 
+            dlt[i] += err[i] * net[i - 1].a.transpose();
     }
+    update(dlt);
+}
+
+template <typename T>
+void neural_net<T>::update(const std::vector<matrix<T>> &dlt) {
+    for (size_t i = 1; i < n_layer; ++i) 
+        net[i].theta -= dlt[i] * alpha;
 }
 
 template <typename T>

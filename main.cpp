@@ -13,6 +13,7 @@ void generate(int n, int m, std::vector<matrix<double>> &x, std::vector<int> &y)
 }
 
 const int epoch = 0;
+const double alpha = 0.000003;
 
 int main() {
     int n, m; scanf("%d %d", &n, &m); // number of samples, number of variables
@@ -26,7 +27,7 @@ int main() {
     std::vector<std::function<double(double)>> fs(n_layer - 1);
     fill(fs.begin(), fs.end(), [](const double &z) { return 1.0 / (1 + exp(-z)); });
 
-    neural_net<double> nn(nodes, fs);
+    neural_net<double> nn(nodes, fs, alpha);
 
     for (int iter = 0; iter < epoch; ++iter) {
         std::vector<int> p = nn.predict(x);
