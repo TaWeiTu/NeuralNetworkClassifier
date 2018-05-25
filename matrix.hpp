@@ -12,6 +12,8 @@ struct matrix {
     std::vector<std::vector<T>> data;
     size_t n, m;
 
+    // just to test git
+
     matrix();
     matrix(size_t, size_t);
     matrix(size_t, size_t, std::function<T(size_t, size_t)>);
