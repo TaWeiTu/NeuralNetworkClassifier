@@ -4,6 +4,7 @@
 #include <vector>
 #include <cassert>
 #include <cstdio>
+#include <random>
 #include <functional>
 
 
@@ -12,11 +13,9 @@ struct matrix {
     std::vector<std::vector<T>> data;
     size_t n, m;
 
-    // just to test git
-
     matrix();
     matrix(size_t, size_t);
-    matrix(size_t, size_t, std::function<T(size_t, size_t)>);
+    matrix(size_t, size_t, const std::function<T(size_t, size_t)> &);
 
     matrix<T> operator+(const matrix<T> &) const;
     matrix<T> operator-(const matrix<T> &) const;
@@ -33,9 +32,12 @@ struct matrix {
     std::vector<T> &operator[](const size_t &);
     const std::vector<T> operator[](const size_t &) const;
     void resize(size_t, size_t);
+    void randomized(size_t, size_t);
     matrix<T> apply(std::function<T(T)>) const;
     matrix<T> transpose() const;
+    matrix<T> slice(int, int, int, int) const;
 
+    void debug() const;
 };
 
 template <typename T> matrix<T> concate_h(matrix<T>, matrix<T>);
@@ -51,14 +53,14 @@ matrix<T>::matrix() {}
 template <typename T>
 matrix<T>::matrix(size_t n, size_t m): n(n), m(m) {
     data.resize(n);
-    for (size_t i = 0; i < m; ++i) 
+    for (size_t i = 0; i < n; ++i) 
         data[i].resize(m);
 } 
 
 template <typename T>
-matrix<T>::matrix(size_t, size_t m, std::function<T(size_t, size_t)> f): n(n), m(m) {
+matrix<T>::matrix(size_t n, size_t m, const std::function<T(size_t, size_t)> &f): n(n), m(m) {
     data.resize(n);
-    for (size_t i = 0; i < m; ++i)
+    for (size_t i = 0; i < n; ++i)
         data[i].resize(m);
     for (size_t i = 0; i < n; ++i) for (int j = 0; j < m; ++j)
         data[i][j] = f(i, j);
@@ -175,6 +177,18 @@ void matrix<T>::resize(size_t new_n, size_t new_m) {
 }
 
 template <typename T>
+void matrix<T>::randomized(size_t new_n, size_t new_m) {
+    resize(new_n, new_m);
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::uniform_real_distribution<> dis(-5.0, 5.0);
+    for (size_t i = 0; i < n; ++i) {
+        for (size_t j = 0; j < m; ++j)
+            data[i][j] = dis(gen);
+    }
+}
+
+template <typename T>
 matrix<T> matrix<T>::transpose() const {
     matrix<T> res(m, n);
     for (size_t i = 0; i < n; ++i) for (size_t j = 0; j < m; ++j) 
@@ -232,5 +246,35 @@ matrix<T> identity(size_t n) {
     return res;
 }
 
+#ifdef DEBUG
+
+template <typename T>
+void matrix<T>::debug() const {
+    printf("size: %zu x %zu\n", n, m);
+    for (size_t i = 0; i < n; ++i) {
+        for (size_t j = 0; j < m; ++j) printf("%.3lf ", data[i][j]);
+        puts("");
+    }
+    puts("");
+}
+
+#else
+
+template <typename T>
+void matrix<T>::debug() const {}
+
+#endif
+
+template <typename T>
+matrix<T> matrix<T>::slice(int u, int d, int l, int r) const {
+    u = u == -1 ? 0 : u; d = d == -1 ? n : d;
+    l = l == -1 ? 0 : l; r = r == -1 ? m : r;
+    matrix<T> res(d - u, r - l);
+    for (size_t i = u; i < d; ++i) {
+        for (size_t j = l; j < r; ++j)
+            res.data[i - u][j - l] = data[i][j];
+    }
+    return res;
+}
 
 #endif

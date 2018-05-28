@@ -51,7 +51,8 @@ neural_net<T>::neural_net(const std::vector<size_t> &nodes, const std::vector<st
 template <typename T>
 matrix<T> neural_net<T>::forward(const matrix<T> &input) {
     matrix<T> last = input;
-    for (size_t i = 0; i < net.size(); ++i) {
+    net[0].a = input;
+    for (size_t i = 1; i < net.size(); ++i) {
         matrix<T> output = net[i].output(last);
         net[i].a = output;
         last = output;
@@ -66,14 +67,16 @@ void neural_net<T>::backprop(const std::vector<matrix<T>> &x, const std::vector<
     for (size_t k = 0; k < x.size(); ++k) {
         std::vector<matrix<T>> err(n_layer);
         for (size_t i = 0; i < n_layer; ++i) err[i] = zeros<T>(net[i].nodes, 1);
-        matrix<T> vy(x[k].n, x[k].m, [&](size_t r, size_t c) { return r == y[k]; });
-        err[n_layer - 1] = forward(x[k]) - vy;
+        matrix<T> vy(net[n_layer - 1].nodes, 1, [y, k](size_t r, size_t c) { return r == y[k]; });
+        matrix<T> f = forward(x[k]);
+        err[n_layer - 1] = f - vy;
         for (size_t i = n_layer - 2; i >= 1; --i) {
-            err[i] = net[i + 1].theta.transpose() * err[i + 1];        
+            err[i] = (net[i + 1].theta.transpose() * err[i + 1]).slice(1, -1, 0, -1);        
             err[i] ^= (net[i].a ^ (ones<T>(net[i].a.n, net[i].a.m) - net[i].a));
         }
         for (size_t i = n_layer - 1; i >= 1; --i) 
-            dlt[i] += err[i] * net[i - 1].a.transpose();
+            // puts("err"), err[i].debug(),
+            dlt[i] += err[i] * concate_v(ones<T>(1, 1), net[i - 1].a).transpose();
     }
     update(dlt);
 }
@@ -81,6 +84,7 @@ void neural_net<T>::backprop(const std::vector<matrix<T>> &x, const std::vector<
 template <typename T>
 void neural_net<T>::update(const std::vector<matrix<T>> &dlt) {
     for (size_t i = 1; i < n_layer; ++i) 
+        dlt[i].debug(),
         net[i].theta -= dlt[i] * alpha;
 }
 

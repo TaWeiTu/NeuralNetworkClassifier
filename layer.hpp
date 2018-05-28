@@ -24,14 +24,14 @@ layer<T>::layer() {}
 
 template <typename T>
 layer<T>::layer(size_t prv, size_t cur, std::function<T(T)> f) {
-    theta.resize(cur, prv + 1);
+    theta.randomized(cur, prv + 1);
     nodes = cur;
     g = f;
 }
 
 template <typename T>
 layer<T>::layer(size_t prv, size_t cur) {
-    theta.resize(cur, prv + 1);
+    theta.randomized(cur, prv + 1);
     nodes = cur;
     g = [](const T &x) { return x; };
 }
