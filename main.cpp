@@ -1,7 +1,7 @@
 #include "matrix.hpp"
 #include "layer.hpp"
 #include "neural_net.hpp"
-// #include "preprocess.hpp"
+#include "preprocess.hpp"
 
 #include <cstdio>
 #include <random>
@@ -33,8 +33,9 @@ void generate(int n, int m, std::vector<matrix<double>> &x, std::vector<int> &y)
     for (int i = 0; i < n; ++i) printf("%d ", y[i]); puts("");
 }
 
-const int epoch = 200;
+const int epoch = 1000;
 const double alpha = 0.01;
+const double cross_valid = 0.7;
 
 int main() {
     int n, m; scanf("%d %d", &n, &m); // number of samples, number of variables
@@ -50,19 +51,21 @@ int main() {
 
     neural_net<double> nn(nodes, fs, alpha);
 
+    using preprocess::normalize;
+    using preprocess::cross_validation;
+    x = normalize(x);
+
+    std::vector<matrix<double>> x_train, x_test;
+    std::vector<int> y_train, y_test;
+    cross_validation(x, y, cross_valid, x_train, y_train, x_test, y_test);
+
     for (int iter = 0; iter < epoch; ++iter) {
-        std::vector<int> p = nn.predict(x);
-        int diff = 0;
-        for (size_t i = 0; i < p.size(); ++i) diff += p[i] != y[i];
-        double j = nn.cost(x, y);
-        printf("iter = %d diff = %d cost = %.5lf\n", iter, diff, j);
-        nn.backprop(x, y);
+        printf("iter = %d cost = %.10lf\n", iter, nn.cost(x_train, y_train));
+        nn.backprop(x_train, y_train);
     }
-    std::vector<int> p = nn.predict(x);
-    for (int i = 0; i < n; ++i) printf("%d ", y[i]);
-    puts("");
-    puts("");
-    for (int i = 0; i < n; ++i) printf("%d ", p[i]);
-    puts("");
+    std::vector<int> prd = nn.predict(x_test);
+    int acc = 0;
+    for (size_t i = 0; i < x_test.size(); ++i) if (prd[i] == y_test[i]) ++acc;
+    printf("accuracy = %.5lf\n", 1.0 * acc / prd.size());
     return 0;
 }

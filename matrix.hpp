@@ -221,7 +221,7 @@ void matrix<T>::randomized(const std::vector<size_t> &d) {
     resize(d);
     std::random_device rd;
     std::mt19937 gen(rd());
-    std::uniform_real_distribution<> dis(-5.0, 5.0);
+    std::uniform_real_distribution<> dis(-1.0, 1.0);
     for (size_t i = 0; i < dim[0]; ++i) {
         for (size_t j = 0; j < dim[1]; ++j)
             data[i][j] = dis(gen);
@@ -305,7 +305,7 @@ matrix<T> identity(size_t n) {
 
 template <typename T>
 void matrix<T>::debug() const {
-    printf("size: %zu x %zu\n", n, m);
+    printf("size: %zu x %zu\n", dim[0], dim[1]);
     for (size_t i = 0; i < dim[0]; ++i) {
         for (size_t j = 0; j < dim[1]; ++j) printf("%.3lf ", data[i][j]);
         puts("");

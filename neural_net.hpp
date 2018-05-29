@@ -75,7 +75,6 @@ void neural_net<T>::backprop(const std::vector<matrix<T>> &x, const std::vector<
             err[i] ^= (net[i].a ^ (ones<T>(net[i].a.dim) - net[i].a));
         }
         for (size_t i = n_layer - 1; i >= 1; --i) 
-            // puts("err"), err[i].debug(),
             dlt[i] += err[i] * concate_v(ones<T>(1, 1), net[i - 1].a).transpose();
     }
     update(dlt);
@@ -94,11 +93,11 @@ T neural_net<T>::cost(const std::vector<matrix<T>> &x, const std::vector<int> &y
     for (size_t i = 0; i < x.size(); ++i) {
         matrix<T> z = forward(x[i]);
         for (size_t j = 0; j < z.dim[0]; ++j) {
-            if (j == y[i]) res += log(z[j][0]);
-            else res += log(1 - z[j][0]);
+            if (j == y[i]) res += log(z[j][0]) / x.size();
+            else res += log(1 - z[j][0]) / x.size();
         } 
     }
-    return -res / (int)x.size();
+    return -res;
 }
 
 template <typename T>
