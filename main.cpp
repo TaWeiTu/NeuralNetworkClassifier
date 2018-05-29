@@ -1,6 +1,7 @@
 #include "matrix.hpp"
 #include "layer.hpp"
 #include "neural_net.hpp"
+// #include "preprocess.hpp"
 
 #include <cstdio>
 #include <random>
@@ -32,7 +33,7 @@ void generate(int n, int m, std::vector<matrix<double>> &x, std::vector<int> &y)
     for (int i = 0; i < n; ++i) printf("%d ", y[i]); puts("");
 }
 
-const int epoch = 1000;
+const int epoch = 200;
 const double alpha = 0.01;
 
 int main() {

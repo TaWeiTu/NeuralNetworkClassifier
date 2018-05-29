@@ -63,7 +63,7 @@ matrix<T> neural_net<T>::forward(const matrix<T> &input) {
 template <typename T>
 void neural_net<T>::backprop(const std::vector<matrix<T>> &x, const std::vector<int> &y) {
     std::vector<matrix<T>> dlt(n_layer);
-    for (size_t k = 0; k < n_layer; ++k) dlt[k] = zeros<T>(net[k].theta.n, net[k].theta.m);
+    for (size_t k = 0; k < n_layer; ++k) dlt[k] = zeros<T>(net[k].theta.dim);
     for (size_t k = 0; k < x.size(); ++k) {
         std::vector<matrix<T>> err(n_layer);
         for (size_t i = 0; i < n_layer; ++i) err[i] = zeros<T>(net[i].nodes, 1);
@@ -72,7 +72,7 @@ void neural_net<T>::backprop(const std::vector<matrix<T>> &x, const std::vector<
         err[n_layer - 1] = f - vy;
         for (size_t i = n_layer - 2; i >= 1; --i) {
             err[i] = (net[i + 1].theta.transpose() * err[i + 1]).slice(1, -1, 0, -1);        
-            err[i] ^= (net[i].a ^ (ones<T>(net[i].a.n, net[i].a.m) - net[i].a));
+            err[i] ^= (net[i].a ^ (ones<T>(net[i].a.dim) - net[i].a));
         }
         for (size_t i = n_layer - 1; i >= 1; --i) 
             // puts("err"), err[i].debug(),
@@ -93,7 +93,7 @@ T neural_net<T>::cost(const std::vector<matrix<T>> &x, const std::vector<int> &y
     T res = 0;
     for (size_t i = 0; i < x.size(); ++i) {
         matrix<T> z = forward(x[i]);
-        for (size_t j = 0; j < z.n; ++j) {
+        for (size_t j = 0; j < z.dim[0]; ++j) {
             if (j == y[i]) res += log(z[j][0]);
             else res += log(1 - z[j][0]);
         } 
@@ -107,7 +107,7 @@ std::vector<int> neural_net<T>::predict(const std::vector<matrix<T>> &x) {
     for (size_t i = 0; i < x.size(); ++i) {
         matrix<T> f = forward(x[i]);
         res[i] = -1;
-        for (size_t j = 0; j < f.n; ++j) if (res[i] == -1 || f[j][0] > f[res[i]][0]) res[i] = j;
+        for (size_t j = 0; j < f.dim[0]; ++j) if (res[i] == -1 || f[j][0] > f[res[i]][0]) res[i] = j;
     }
     return res;
 }
