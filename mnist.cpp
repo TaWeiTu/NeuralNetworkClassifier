@@ -12,8 +12,8 @@ const int train_size = 500;
 const int test_size = 500;
 const int dimension = 784;
 
-const int epoch = 50;
-const double alpha = 0.01;
+const int epoch = 150;
+const double alpha = 0.003;
 
 int main(int argc, const char **argv) {
     FILE *train_images = fopen("mnist_train_images.txt", "r"), *train_labels = fopen("mnist_train_labels.txt", "r");
@@ -62,7 +62,10 @@ int main(int argc, const char **argv) {
     puts("start training");
     
     for (int iter = 0; iter < epoch; ++iter) {
-        printf("iter = %d cost = %.5lf\n", iter, nn.cost(x_train, y_train));
+        std::vector<int> prd = nn.predict(x_train);
+        int acc = 0;
+        for (size_t i = 0; i < prd.size(); ++i) if (prd[i] == y_train[i]) ++acc;
+        printf("iter = %d cost = %.5lf correct = %d\n", iter, nn.cost(x_train, y_train), acc);
         nn.backprop(x_train, y_train);
     }
 
