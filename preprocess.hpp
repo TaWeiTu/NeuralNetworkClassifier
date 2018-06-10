@@ -1,14 +1,14 @@
 #ifndef PREPROCESS_HPP
 #define PREPROCESS_HPP
 
-#include "matrix.hpp"
-
 #include <vector>
 #include <cmath>
 #include <algorithm>
 #include <chrono>
 #include <random>
 #include <utility>
+
+const double eps = 1e-9;
 
 namespace preprocess {
 
@@ -17,13 +17,16 @@ std::vector<std::vector<T>> normalize(const std::vector<std::vector<T>> &x) {
     std::vector<std::vector<T>> res(x.size(), std::vector<T>(x[0].size()));
     for (size_t i = 0; i < x[0].size(); ++i) {
         T avg = 0;
-        for (size_t j = 0; j < x.size(); ++j) avg += x[j][i][0];
+        for (size_t j = 0; j < x.size(); ++j) avg += x[j][i];
         avg /= x.size();
         T stddev = 0;
-        for (size_t j = 0; j < x.size(); ++j) stddev += (x[j][i][0] - avg) * (x[j][i][0] - avg);
+        for (size_t j = 0; j < x.size(); ++j) stddev += (x[j][i] - avg) * (x[j][i] - avg);
         stddev /= (x.size() - 1);
         stddev = sqrt(stddev);
-        for (size_t j = 0; j < x.size(); ++j) res[j][i][0] = (x[j][i][0] - avg) / stddev;
+        for (size_t j = 0; j < x.size(); ++j) {
+            if (fabs(stddev) < eps) res[j][i] = 0.;
+            else res[j][i] = (x[j][i] - avg) / stddev;
+        }
     }
     return res;
 }

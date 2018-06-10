@@ -5,6 +5,7 @@
 #include <functional>
 #include <stdexcept>
 #include <random>
+#include <type_traits>
 
 
 namespace matlib {
@@ -115,7 +116,7 @@ public:
         if (_r != rhs.row() || _c != rhs.col()) throw std::length_error("matrix::operator%");
         matrix<T> res(_r, _c);
         for (size_t i = 0; i < _r; ++i) {
-            for (size_t j = 0; j < _c; ++j) res(i, j) = (*this)(i, j) / rhs(i, j);
+            for (size_t j = 0; j < _c; ++j) res(i, j) = (*this)(i, j) / (rhs(i, j) + 1e-9);
         }
         return res;
     }
@@ -169,7 +170,7 @@ public:
     matrix<T> &operator%=(const matrix<U> &rhs) {
         if (_r != rhs.row() || _c != rhs.col()) throw std::length_error("matrix::operator%=");
         for (size_t i = 0; i < _r; ++i) {
-            for (size_t j = 0; j < _c; ++j) (*this)(i, j) /= rhs(i, j);
+            for (size_t j = 0; j < _c; ++j) (*this)(i, j) /= (rhs(i, j) + 1e-9);
         }
         return (*this);
     }
@@ -192,6 +193,15 @@ public:
             }
         }
         return res;
+    }
+
+    template <typename U>
+    bool operator==(const matrix<U> &rhs) const {
+        if (_r != rhs.row() || _c != rhs.col()) return false;
+        for (size_t i = 0; i < _r; ++i) {
+            for (size_t j = 0; j < _c; ++j) if (fabs((*this)(i, j) - rhs(i, j)) > 1e-9) return false;
+        }
+        return true;
     }
 
 };
@@ -247,7 +257,7 @@ template <typename T>
 matrix<T> randomized(size_t r, size_t c = 1) {
     std::random_device rd;
     std::mt19937 gen(rd());
-    std::uniform_real_distribution<T> dis(-1e-2, 1e-2);
+    std::uniform_real_distribution<T> dis(-1., 1.);
     matrix<T> res(r, c);
     for (size_t i = 0; i < r; ++i) {
         for (size_t j = 0; j < c; ++j) res(i, j) = dis(gen);
@@ -255,15 +265,18 @@ matrix<T> randomized(size_t r, size_t c = 1) {
     return res;
 }
 
-template <typename T>
-matrix<double> operator+(double c, const matrix<T> &x) { return matrix<double>(x.row(), x.col(), c) + x; }
-template <typename T>
-matrix<long double> operator+(long double c, const matrix<T> &x) { return matrix<long double>(x.row(), x.col(), c) + x; }
+template <typename U, typename = typename std::enable_if<std::is_arithmetic<U>::value>::type, typename T>
+matrix<U> operator+(U c, const matrix<T> &x) { return matrix<U>(x.row(), x.col(), c) + x; }
 
-template <typename T>
-matrix<double> operator-(double c, const matrix<T> &x) { return matrix<double>(x.row(), x.col(), c) - x; }
-template <typename T>
-matrix<long double> operator-(long double c, const matrix<T> &x) { return matrix<long double>(x.row(), x.col(), c) - x; }
+template <typename U, typename = typename std::enable_if<std::is_arithmetic<U>::value>::type, typename T>
+matrix<U> operator-(U c, const matrix<T> &x) { return matrix<U>(x.row(), x.col(), c) - x; }
+
+template <typename U, typename = typename std::enable_if<std::is_arithmetic<U>::value>::type, typename T>
+matrix<U> operator*(U c, const matrix<T> &x) { return matrix<U>(x.row(), x.col(), c) ^ x; }
+
+template <typename U, typename = typename std::enable_if<std::is_arithmetic<U>::value>::type, typename T>
+matrix<U> operator/(U c, const matrix<T> &x) { return matrix<U>(x.row(), x.col(), c) % x; }
+
 
 }
 #endif

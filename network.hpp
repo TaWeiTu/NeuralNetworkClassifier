@@ -4,8 +4,7 @@
 #include <vector>
 #include <stdexcept>
 #include <algorithm>
-#include <ctime>
-#include <iostream>
+#include <string>
 
 #include "matlib.hpp"
 #include "activation.hpp"
@@ -13,25 +12,12 @@
 using activation::func;
 
 template <typename T>
-void _debug(matlib::matrix<T> x) {
+void _debug(std::string s, matlib::matrix<T> x) {
     for (size_t i = 0; i < x.row(); ++i) {
         for (size_t j = 0; j < x.col(); ++j) printf("%.5lf ", x(i, j));
         puts("");
     }
     puts("");
-}
-
-template <typename T>
-bool check(matlib::matrix<T> x) {
-    for (size_t i = 0; i < x.row(); ++i) {
-        for (size_t j = 0; j < x.col(); ++j) if (std::isnan(x(i, j))) return true;
-    }
-    return false;
-} 
-
-void sleep(int ms) {
-    clock_t p = clock();
-    while ((clock() - p) * 1.0 / CLOCKS_PER_SEC * 1000 < ms);
 }
 
 template <typename T, size_t F, size_t C> class network {
@@ -45,7 +31,7 @@ private:
 
     void _forward(const matlib::matrix<T> &x) {
         _a[0] = x;
-        for (int i = 1; i <= _layer; ++i) {
+        for (size_t i = 1; i <= _layer; ++i) {
             _z[i] = _w[i] * _a[i - 1];
             _z[i] += _b[i].expand(_z[i]);
             _a[i] = _g[i](_z[i]);
@@ -56,7 +42,6 @@ private:
         _da[_layer] = -(y % _a[_layer]) + ((1. - y) % (1. - _a[_layer]));
         for (size_t i = _layer; i >= 1; --i) {
             _dz[i] = _da[i] ^ _g[i].derivative(_z[i]);
-            // if (i == 1) _debug(_dz[i], 0), _debug(_da[i], 0), _debug(_g[i].derivative(_z[i]), 0), _debug(_z[i], 0);
             _dw[i] = (_dz[i] * _a[i - 1].transpose()) / m;
             _db[i] = matlib::sum(_dz[i], 1) / m;
             _da[i - 1] = _w[i].transpose() * _dz[i];
@@ -65,9 +50,8 @@ private:
     }
     void _update() {
         for (size_t i = 1; i <= _layer; ++i) {
-            _w[i] -= _dw[i] * _alpha;
-            _b[i] -= _db[i] * _alpha;
-            _debug(_w[i]), _debug(_b[i]);
+            _w[i] -= _alpha * _dw[i];
+            _b[i] -= _alpha * _db[i];
         }
     }
 
@@ -100,12 +84,14 @@ private:
 public:
     network() {
         _layer = 0;
+        _alpha = 0.;
+        _nodes.clear();
         _g.clear();
         _w.clear(), _z.clear(), _a.clear(), _b.clear();
         _dw.clear(), _dz.clear(), _db.clear();
     }
     network(size_t layer, const std::vector<size_t> nodes, const std::vector<std::string> fname, double alpha): 
-        _layer(layer), _nodes(nodes), _alpha(alpha) {
+        _alpha(alpha), _layer(layer), _nodes(nodes) {
 
         if (nodes.size() != layer + 1) throw std::length_error("network::network(nodes.size() != layer + 1)");
         if (fname.size() != layer + 1) throw std::length_error("network::network(fname,size() != layer + 1)");
@@ -143,7 +129,7 @@ public:
     }
 
     T cost(int m, const std::vector<std::vector<T>> &x, const std::vector<int> &y) {
-        if (*max_element(y.begin(), y.end()) >= C) throw std::invalid_argument("network::fit(output should ranges in [0, C))");
+        if ((size_t)*max_element(y.begin(), y.end()) >= C) throw std::invalid_argument("network::fit(output should ranges in [0, C))");
         if (x[0].size() != F) throw std::invalid_argument("network::fit(input size must to equal to number of features)");
 
         matlib::matrix<T> input = _convert(x);
@@ -151,15 +137,17 @@ public:
         _forward(input);
 
         T res = 0.;
-        // _debug(_a[_layer], 1);
         for (size_t i = 0; i < output.row(); ++i) {
-            for (size_t j = 0; j < output.col(); ++j) res -= output(i, j) * log(_a[_layer](i, j)) + (1. - output(i, j)) * log(1. - _a[_layer](i, j));
+            for (size_t j = 0; j < output.col(); ++j) {
+                if (fabs(output(i, j)) > 1e-9) res -= log(std::max((T)0.001, _a[_layer](i, j))) / m;
+                else res -= log(std::max((T)0.001, 1. - _a[_layer](i, j))) / m;
+            }
         }
-        return res / m;
+        return res;
     }
 
     void fit(int m, const std::vector<std::vector<T>> &x, const std::vector<int> &y) {
-        if (*max_element(y.begin(), y.end()) >= C) throw std::invalid_argument("network::fit(output should ranges in [0, C))");
+        if ((size_t)*max_element(y.begin(), y.end()) >= C) throw std::invalid_argument("network::fit(output should ranges in [0, C))");
         if (x[0].size() != F) throw std::invalid_argument("network::fit(input size must to equal to number of features)");
 
         matlib::matrix<T> input = _convert(x);

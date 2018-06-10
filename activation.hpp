@@ -15,7 +15,7 @@ namespace activation {
 template <typename T>
 std::function<T(T)> _create_function(std::string s) {
 
-    if (s == "relu")    return [](T x) { return std::max(x, 0.); };
+    if (s == "relu")    return [](T x) { return std::max(x, (T)0.); };
     if (s == "leaky")   return [](T x) { return std::max(x, 0.01 * x); };
     if (s == "sigmoid") return [](T x) { return 1. / (1. + exp(-x)); };
     if (s == "tanh")    return [](T x) { return (exp(x) - exp(-x)) / (exp(x) + exp(-x)); };
