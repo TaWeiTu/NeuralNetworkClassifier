@@ -8,7 +8,7 @@
 
 const int trains = 60000;
 const int tests = 10000;
-const int train_size = 500;
+const int train_size = 3000;
 const int test_size = 500;
 const int dimension = 784;
 
@@ -16,8 +16,9 @@ const int epoch = 100;
 const double alpha = 0.1;
 
 int main(int argc, const char **argv) {
+    if (argc == 1) throw std::invalid_argument("main(configuration file is required)");
+    
     FILE *train_images = fopen("mnist_train_images.txt", "r"), *train_labels = fopen("mnist_train_labels.txt", "r");
-
     std::vector<std::vector<long double>> x_train(trains);
     std::vector<int> y_train(trains);
 
@@ -42,9 +43,10 @@ int main(int argc, const char **argv) {
 
     puts("done reading files");
 
-    size_t n_layer; scanf("%zu", &n_layer);
+    FILE *config = fopen(argv[1], "r");
+    size_t n_layer; fscanf(config, "%zu", &n_layer);
     std::vector<size_t> nodes(n_layer + 1);
-    for (size_t i = 0; i <= n_layer; ++i) scanf("%zu", &nodes[i]);
+    for (size_t i = 0; i <= n_layer; ++i) fscanf(config, "%zu", &nodes[i]);
 
     std::vector<std::string> func(n_layer + 1, "relu");
     func.back() = "sigmoid";
@@ -68,7 +70,7 @@ int main(int argc, const char **argv) {
         long double c = nn.cost(train_size, x_train, y_train);
         int acc = 0;
         for (size_t i = 0; i < prd.size(); ++i) if (prd[i] == y_train[i]) ++acc;
-        printf("iter = %d cost = %.5Lf correct = %d\n", iter, c, acc);
+        printf("iter = %d cost = %.5Lf accuracy = %.5lf\n", iter, c, 1. * acc / train_size);
         nn.fit(train_size, x_train, y_train);
     }
 

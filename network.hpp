@@ -5,6 +5,7 @@
 #include <stdexcept>
 #include <algorithm>
 #include <string>
+#include <cmath>
 
 #include "matlib.hpp"
 #include "activation.hpp"
@@ -106,8 +107,8 @@ public:
         for (size_t i = 1; i <= _layer; ++i) {
             _g[i] = func<T>(fname[i]);
 
-            _w[i] = matlib::randomized<T>(nodes[i], nodes[i - 1]);
-            _b[i] = matlib::randomized<T>(nodes[i]);
+            _w[i] = matlib::randomized<T>(nodes[i], nodes[i - 1], sqrt(1. / nodes[i - 1]));
+            _b[i] = matlib::randomized<T>(nodes[i], 1, sqrt(1. / nodes[i - 1]));
             _z[i].reshape(nodes[i]);
             _a[i].reshape(nodes[i]);
 

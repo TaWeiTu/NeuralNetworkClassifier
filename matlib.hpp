@@ -254,10 +254,10 @@ matrix<T> sum(const matrix<T> &x, int flag) {
 }
 
 template <typename T>
-matrix<T> randomized(size_t r, size_t c = 1) {
+matrix<T> randomized(size_t r, size_t c, T stddev) {
     std::random_device rd;
     std::mt19937 gen(rd());
-    std::uniform_real_distribution<T> dis(-1., 1.);
+    std::normal_distribution<T> dis(0.0, stddev);
     matrix<T> res(r, c);
     for (size_t i = 0; i < r; ++i) {
         for (size_t j = 0; j < c; ++j) res(i, j) = dis(gen);
