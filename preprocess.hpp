@@ -12,9 +12,8 @@ const double eps = 1e-9;
 
 namespace preprocess {
 
-template <typename T>
-std::vector<std::vector<T>> normalize(const std::vector<std::vector<T>> &x) {
-    std::vector<std::vector<T>> res(x.size(), std::vector<T>(x[0].size()));
+template <typename T, typename U>
+void normalize(std::vector<std::vector<T>> &x, std::vector<std::vector<U>> &sub = std::vector<std::vector<U>>()) {
     for (size_t i = 0; i < x[0].size(); ++i) {
         T avg = 0;
         for (size_t j = 0; j < x.size(); ++j) avg += x[j][i];
@@ -24,11 +23,16 @@ std::vector<std::vector<T>> normalize(const std::vector<std::vector<T>> &x) {
         stddev /= (x.size() - 1);
         stddev = sqrt(stddev);
         for (size_t j = 0; j < x.size(); ++j) {
-            if (fabs(stddev) < eps) res[j][i] = 0.;
-            else res[j][i] = (x[j][i] - avg) / stddev;
+            if (fabs(stddev) < eps) x[j][i] = 0.;
+            else x[j][i] = (x[j][i] - avg) / stddev;
+        }
+        if (sub.size() && sub[0].size() > i) {
+            for (size_t j = 0; j < sub.size(); ++j) {
+                if (fabs(stddev) < eps) sub[j][i] = 0.;
+                else sub[j][i] = (sub[j][i] - avg) / stddev;
+            }
         }
     }
-    return res;
 }
 
 std::vector<int> _random_permutation(size_t size) {

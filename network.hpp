@@ -12,15 +12,6 @@
 
 using activation::func;
 
-template <typename T>
-void _debug(std::string s, matlib::matrix<T> x) {
-    for (size_t i = 0; i < x.row(); ++i) {
-        for (size_t j = 0; j < x.col(); ++j) printf("%.5lf ", x(i, j));
-        puts("");
-    }
-    puts("");
-}
-
 template <typename T, size_t F, size_t C> class network {
 private:
     double _alpha;

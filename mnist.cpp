@@ -8,11 +8,11 @@
 
 const int trains = 60000;
 const int tests = 10000;
-const int train_size = 3000;
-const int test_size = 500;
+const int train_size = 500;
+const int test_size = 50;
 const int dimension = 784;
 
-const int epoch = 100;
+const int epoch = 10;
 const double alpha = 0.1;
 
 int main(int argc, const char **argv) {
@@ -59,9 +59,7 @@ int main(int argc, const char **argv) {
 
     tie(x_train, y_train) = random_sampling(x_train, y_train, train_size);
     tie(x_test, y_test) = random_sampling(x_test, y_test, test_size);
-
-    x_train = normalize(x_train);
-    x_test = normalize(x_test);
+    normalize(x_train, x_test);
 
     puts("start training");
     
