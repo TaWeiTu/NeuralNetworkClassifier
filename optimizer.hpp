@@ -100,6 +100,49 @@ public:
     }
 };
 
+template <typename T> class adam: public _optimizer {
+private:
+    double _beta1, _beta2;
+    double _biased_beta1, _biased_beta2;
+    std::vector<matlib::matrix<T>> _vdw, _vdb, _sdw, _sdb;
+
+public:
+    adam() {}
+    adam(const std::vector<double> &param,
+            const std::vector<matlib::matrix<T>> &w, const std::vector<matlib::matrix<T>> &b) {
+        if (param.size() != 3u) throw std::invalid_argument("adam::adam(param should be [alpha, beta1, beta2])");
+        _alpha = param[0];
+        _beta1 = param[1];
+        _beta2 = param[2];
+        _biased_beta1 = _biased_beta2 = 1.;
+
+        _vdw.resize(w.size()), _vdb.resize(b.size());
+        _sdw.resize(w.size()), _sdb.resize(b.size());
+        for (size_t i = 0; i < w.size(); ++i) {
+            _vdw[i] = matlib::zeros<T>(w[i].row(), w[i].col());
+            _vdb[i] = matlib::zeros<T>(b[i].row(), b[i].col());
+            _sdw[i] = matlib::zeros<T>(w[i].row(), w[i].col());
+            _sdb[i] = matlib::zeros<T>(b[i].row(), b[i].col());
+        }
+    }
+
+    void update(std::vector<matlib::matrix<T>> &w, const std::vector<matlib::matrix<T>> &dw,
+                std::vector<matlib::matrix<T>> &b, const std::vector<matlib::matrix<T>> &db) {
+        _biased_beta1 *= _beta1;
+        _biased_beta2 *= _beta2;
+
+        for (size_t i = 1; i < w.size(); ++i) {
+            _vdw[i] = _beta1 * _vdw[i] + (1. - _beta1) * dw[i];          
+            _vdb[i] = _beta1 * _vdb[i] + (1. - _beta1) * db[i];          
+            _sdw[i] = _beta2 * _sdw[i] + (1. - _beta2) * (dw[i] ^ dw[i]);          
+            _sdb[i] = _beta2 * _sdb[i] + (1. - _beta2) * (db[i] ^ db[i]);          
+
+            w[i] -= _alpha * ((_vdw[i] / (1. - _biased_beta1)) % matlib::xsqrt((_sdw[i] / (1. - _biased_beta2)) + 1e-8));
+            b[i] -= _alpha * ((_vdb[i] / (1. - _biased_beta1)) % matlib::xsqrt((_sdb[i] / (1. - _biased_beta2)) + 1e-8));
+        }
+    }
+};
+
 }
 
 template <class C>

@@ -13,8 +13,8 @@ const int train_size = 500;
 const int test_size = 50;
 const int dimension = 784;
 
-const int epoch = 30;
-const double alpha = 0.0001;
+const int epoch = 10;
+const double alpha = 0.01;
 
 int main(int argc, const char **argv) {
     if (argc == 1) throw std::invalid_argument("main(configuration file is required)");
@@ -53,7 +53,7 @@ int main(int argc, const char **argv) {
     func.back() = "sigmoid";
     // network<long double, dimension, 10, optimizer::momentum<long double>> nn(n_layer, nodes, func, { alpha, 0.9 });
     // network<long double, dimension, 10, optimizer::vanilla<long double>> nn(n_layer, nodes, func, { alpha });
-    network<long double, dimension, 10, optimizer::RMSprop<long double>> nn(n_layer, nodes, func, { alpha, 0.999 });
+    network<long double, dimension, 10, optimizer::adam<long double>> nn(n_layer, nodes, func, { alpha, 0.9, 0.999 });
     puts("done reading configuration");
 
 
