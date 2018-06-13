@@ -1,6 +1,7 @@
 #include "preprocess.hpp"
 #include "network.hpp"
 #include "optimizer.hpp"
+#include "train.hpp"
 
 #include <cstdio>
 #include <vector>
@@ -9,11 +10,12 @@
 
 const int trains = 60000;
 const int tests = 10000;
-const int train_size = 500;
-const int test_size = 50;
+const int train_size = 20000;
+const int test_size = 3000;
+const int batch_size = 1000;
 const int dimension = 784;
 
-const int epoch = 10;
+const int epoch = 3;
 const double alpha = 0.01;
 
 int main(int argc, const char **argv) {
@@ -64,15 +66,22 @@ int main(int argc, const char **argv) {
     tie(x_test, y_test) = random_sampling(x_test, y_test, test_size);
     normalize(x_train, x_test);
 
+    batch<long double> buf(batch_size, x_train, y_train);      
+
     puts("start training");
     
     for (int iter = 0; iter < epoch; ++iter) {
-        std::vector<int> prd = nn.predict(train_size, x_train);
-        long double c = nn.cost(train_size, x_train, y_train);
-        int acc = 0;
-        for (size_t i = 0; i < prd.size(); ++i) if (prd[i] == y_train[i]) ++acc;
-        printf("iter = %d cost = %.5Lf accuracy = %.5lf\n", iter, c, 1. * acc / train_size);
-        nn.fit(train_size, x_train, y_train);
+        std::vector<std::vector<long double>> x;
+        std::vector<int> y;
+        while (buf.next(x, y)) {
+            std::vector<int> prd = nn.predict(x.size(), x);
+            long double c = nn.cost(x.size(), x, y);
+            int acc = 0;
+            for (size_t i = 0; i < prd.size(); ++i) if (prd[i] == y[i]) ++acc;
+            printf("iter = %d cost = %.5Lf accuracy = %.5lf\n", iter, c, 1. * acc / x.size());
+            nn.fit(x.size(), x, y);
+        }
+        buf.reload();
     }
 
     puts("done training");
