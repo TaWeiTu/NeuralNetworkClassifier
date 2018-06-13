@@ -1,3 +1,5 @@
+#pragma GCC optimize("Ofast", "unroll-loops")
+#pragma GCC target("avx")
 #ifndef MATLIB_HPP_INCLUDED
 #define MATLIB_HPP_INCLUDED
 
@@ -80,9 +82,18 @@ public:
     matrix<T> operator*(const matrix<U> &rhs) const {
         if (_c != rhs.row()) throw std::length_error("matrix::operator*");
         matrix<T> res(_r, rhs.col());
+        matrix<U> trhs = rhs.transpose();
+        size_t c_rhs = rhs.col();
         for (size_t i = 0; i < _r; ++i) {
-            for (size_t k = 0; k < _c; ++k) {
-                for (size_t j = 0; j < rhs.col(); ++j) res(i, j) += (*this)(i, k) * rhs(k, j);
+            for (size_t j = 0; j < c_rhs; ++j) {
+                T v = 0.;
+                size_t k = 0, u = 0;
+                while (u = 0, k + 16 <= _c) {
+                    while (u < 16) v += (*this)(i, k + u) * trhs(j, k + u), ++u;
+                    k += 16;
+                }
+                while (k < _c) v += (*this)(i, k) * trhs(j, k), ++k;
+                res(i, j) = v;
             }
         }
         return res;

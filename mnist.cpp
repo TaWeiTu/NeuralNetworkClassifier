@@ -10,12 +10,12 @@
 
 const int trains = 60000;
 const int tests = 10000;
-const int train_size = 20000;
-const int test_size = 3000;
+const int train_size = 60000;
+const int test_size = 10000;
 const int batch_size = 1000;
 const int dimension = 784;
 
-const int epoch = 3;
+const int epoch = 2;
 const double alpha = 0.01;
 
 int main(int argc, const char **argv) {
