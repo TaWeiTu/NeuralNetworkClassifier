@@ -6,6 +6,7 @@
 #include <stdexcept>
 #include <random>
 #include <type_traits>
+#include <cmath>
 
 
 namespace matlib {
@@ -254,29 +255,51 @@ matrix<T> sum(const matrix<T> &x, int flag) {
 }
 
 template <typename T>
+void _ddebug(matrix<T> x) {
+    for (size_t i = 0; i < x.row(); ++i) {
+        for (size_t j = 0; j < x.col(); ++j) printf("%.5lf ", x(i, j));
+        puts("");
+    }
+    puts("");
+}
+
+template <typename T>
 matrix<T> randomized(size_t r, size_t c, T stddev) {
     std::random_device rd;
     std::mt19937 gen(rd());
     std::normal_distribution<T> dis(0.0, stddev);
     matrix<T> res(r, c);
     for (size_t i = 0; i < r; ++i) {
-        for (size_t j = 0; j < c; ++j) res(i, j) = dis(gen);
+        for (size_t j = 0; j < c; ++j) {
+            res(i, j) = dis(gen);
+            while (res(i, j) < -1. || res(i, j) > 1.) res(i, j) = dis(gen);
+        }
     }
     return res;
 }
 
-template <typename U, typename = typename std::enable_if<std::is_arithmetic<U>::value>::type, typename T>
-matrix<U> operator+(U c, const matrix<T> &x) { return matrix<U>(x.row(), x.col(), c) + x; }
+template <typename U, typename = std::enable_if_t<std::is_arithmetic<U>::value>, typename T>
+matrix<T> operator+(U c, const matrix<T> &x) { return matrix<T>(x.row(), x.col(), c) + x; }
+template <typename T, typename U, typename = std::enable_if_t<std::is_arithmetic<U>::value>>
+matrix<T> operator+(const matrix<T> &x, U c) { return matrix<T>(x.row(), x.col(), c) + x; }
 
-template <typename U, typename = typename std::enable_if<std::is_arithmetic<U>::value>::type, typename T>
-matrix<U> operator-(U c, const matrix<T> &x) { return matrix<U>(x.row(), x.col(), c) - x; }
+template <typename U, typename = std::enable_if_t<std::is_arithmetic<U>::value>, typename T>
+matrix<T> operator-(U c, const matrix<T> &x) { return matrix<T>(x.row(), x.col(), c) - x; }
+template <typename T, typename U, typename = std::enable_if_t<std::is_arithmetic<U>::value>>
+matrix<T> operator-(const matrix<T> &x, U c) { return matrix<T>(x.row(), x.col(), c) - x; }
 
-template <typename U, typename = typename std::enable_if<std::is_arithmetic<U>::value>::type, typename T>
-matrix<U> operator*(U c, const matrix<T> &x) { return matrix<U>(x.row(), x.col(), c) ^ x; }
+template <typename U, typename = std::enable_if_t<std::is_arithmetic<U>::value>, typename T>
+matrix<T> operator*(U c, const matrix<T> &x) { return matrix<T>(x.row(), x.col(), c) ^ x; }
 
-template <typename U, typename = typename std::enable_if<std::is_arithmetic<U>::value>::type, typename T>
-matrix<U> operator/(U c, const matrix<T> &x) { return matrix<U>(x.row(), x.col(), c) % x; }
+template <typename U, typename = std::enable_if_t<std::is_arithmetic<U>::value>, typename T>
+matrix<T> operator/(U c, const matrix<T> &x) { return matrix<T>(x.row(), x.col(), c) % x; }
 
+template <typename T>
+matrix<T> xsqrt(const matrix<T> &x) {
+    std::function<T(T)> f = [](T x) { return sqrt(x); };
+    matrix<T> res = apply(x, f);
+    return res;
+}
 
 }
 #endif

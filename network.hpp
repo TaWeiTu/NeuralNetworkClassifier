@@ -6,20 +6,23 @@
 #include <algorithm>
 #include <string>
 #include <cmath>
+#include <type_traits>
 
 #include "matlib.hpp"
 #include "activation.hpp"
+#include "optimizer.hpp"
 
 using activation::func;
 
-template <typename T, size_t F, size_t C> class network {
+template <typename T, size_t F, size_t C, 
+          class Opt, typename = std::enable_if_t<is_optimizer<Opt>::value>> class network {
 private:
-    double _alpha;
     size_t _layer;
     std::vector<size_t> _nodes;
     std::vector<func<T>> _g;
     std::vector<matlib::matrix<T>> _w, _z, _a, _b;
     std::vector<matlib::matrix<T>> _dw, _dz, _da, _db;
+    Opt _optimizer;
 
     void _forward(const matlib::matrix<T> &x) {
         _a[0] = x;
@@ -38,13 +41,7 @@ private:
             _db[i] = matlib::sum(_dz[i], 1) / m;
             _da[i - 1] = _w[i].transpose() * _dz[i];
         }
-        _update();
-    }
-    void _update() {
-        for (size_t i = 1; i <= _layer; ++i) {
-            _w[i] -= _alpha * _dw[i];
-            _b[i] -= _alpha * _db[i];
-        }
+        _optimizer.update(_w, _dw, _b, _db);
     }
 
     matlib::matrix<T> _convert(const std::vector<std::vector<T>> &x) const {
@@ -76,14 +73,13 @@ private:
 public:
     network() {
         _layer = 0;
-        _alpha = 0.;
         _nodes.clear();
         _g.clear();
         _w.clear(), _z.clear(), _a.clear(), _b.clear();
         _dw.clear(), _dz.clear(), _db.clear();
     }
-    network(size_t layer, const std::vector<size_t> nodes, const std::vector<std::string> fname, double alpha): 
-        _alpha(alpha), _layer(layer), _nodes(nodes) {
+    network(size_t layer, const std::vector<size_t> nodes, const std::vector<std::string> fname, const std::vector<double> &param): 
+        _layer(layer), _nodes(nodes) {
 
         if (nodes.size() != layer + 1) throw std::length_error("network::network(nodes.size() != layer + 1)");
         if (fname.size() != layer + 1) throw std::length_error("network::network(fname,size() != layer + 1)");
@@ -108,9 +104,10 @@ public:
             _da[i].reshape(nodes[i]);
             _db[i].reshape(nodes[i]);
         }
+        _optimizer = Opt(param, _w, _b);
     }
 
-    void set_alpha(double alpha) { _alpha = alpha; }
+    void set_alpha(double alpha) { _optimizer.set_alpha(alpha); }
 
     std::vector<int> predict(int m, const std::vector<std::vector<T>> &x) {
         if (x[0].size() != F) throw std::invalid_argument("network::fit(input size must to equal to number of features)");
