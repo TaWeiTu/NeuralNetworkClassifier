@@ -84,16 +84,21 @@ public:
         matrix<T> res(_r, rhs.col());
         matrix<U> trhs = rhs.transpose();
         size_t c_rhs = rhs.col();
-        for (size_t i = 0; i < _r; ++i) {
-            for (size_t j = 0; j < c_rhs; ++j) {
-                T v = 0.;
-                size_t k = 0, u = 0;
-                while (u = 0, k + 16 <= _c) {
-                    while (u < 16) v += (*this)(i, k + u) * trhs(j, k + u), ++u;
-                    k += 16;
+        size_t i, j, k, u;
+        T v;
+#pragma omp parallel shared(res) private(i, j, k, u, v) num_threads(40)
+        {
+#pragma omp for schedule(static)
+            for (i = 0; i < _r; ++i) {
+                for (j = 0; j < c_rhs; ++j) {
+                    v = 0., k = 0, u = 0;
+                    while (u = 0, k + 16 <= _c) {
+                        while (u < 16) v += (*this)(i, k + u) * trhs(j, k + u), ++u;
+                        k += 16;
+                    }
+                    while (k < _c) v += (*this)(i, k) * trhs(j, k), ++k;
+                    res(i, j) = v;
                 }
-                while (k < _c) v += (*this)(i, k) * trhs(j, k), ++k;
-                res(i, j) = v;
             }
         }
         return res;
@@ -106,7 +111,7 @@ public:
         }
         return res;
     }
-    template <typename U>
+    template <typename U, typename = std::enable_if_t<std::is_arithmetic<U>::value>>
     matrix<T> operator/(U c) const {
         matrix<T> res(_r, _c);
         for (size_t i = 0; i < _r; ++i) {
@@ -123,8 +128,8 @@ public:
         }
         return res;
     }
-    template <typename U>
-    matrix<T> operator%(const matrix<U> &rhs) const {
+    template <typename U, typename = std::enable_if_t<std::is_arithmetic<U>::value>>
+    matrix<T> operator/(const matrix<U> &rhs) const {
         if (_r != rhs.row() || _c != rhs.col()) throw std::length_error("matrix::operator%");
         matrix<T> res(_r, _c);
         for (size_t i = 0; i < _r; ++i) {
@@ -163,7 +168,7 @@ public:
         }
         return (*this);
     }
-    template <typename U>
+    template <typename U, typename = std::enable_if_t<std::is_arithmetic<U>::value>>
     matrix<T> &operator/=(U c) const {
         for (size_t i = 0; i < _r; ++i) {
             for (size_t j = 0; j < _c; ++j) (*this)(i, j) /= c;
@@ -178,8 +183,8 @@ public:
         }
         return (*this);
     }
-    template <typename U>
-    matrix<T> &operator%=(const matrix<U> &rhs) {
+    template <typename U, typename = std::enable_if_t<std::is_arithmetic<U>::value>>
+    matrix<T> &operator/=(const matrix<U> &rhs) {
         if (_r != rhs.row() || _c != rhs.col()) throw std::length_error("matrix::operator%=");
         for (size_t i = 0; i < _r; ++i) {
             for (size_t j = 0; j < _c; ++j) (*this)(i, j) /= (rhs(i, j) + 1e-9);
@@ -303,7 +308,7 @@ template <typename U, typename = std::enable_if_t<std::is_arithmetic<U>::value>,
 matrix<T> operator*(U c, const matrix<T> &x) { return matrix<T>(x.row(), x.col(), c) ^ x; }
 
 template <typename U, typename = std::enable_if_t<std::is_arithmetic<U>::value>, typename T>
-matrix<T> operator/(U c, const matrix<T> &x) { return matrix<T>(x.row(), x.col(), c) % x; }
+matrix<T> operator/(U c, const matrix<T> &x) { return matrix<T>(x.row(), x.col(), c) / x; }
 
 template <typename T>
 matrix<T> xsqrt(const matrix<T> &x) {

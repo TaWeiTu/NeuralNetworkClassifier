@@ -34,7 +34,7 @@ private:
     }
     void _backward(int m, const matlib::matrix<T> &x, const matlib::matrix<T> &y) {
         _forward(x);
-        _da[_layer] = -(y % _a[_layer]) + ((1. - y) % (1. - _a[_layer]));
+        _da[_layer] = -(y / _a[_layer]) + ((1. - y) / (1. - _a[_layer]));
         for (size_t i = _layer; i >= 1; --i) {
             _dz[i] = _da[i] ^ _g[i].derivative(_z[i]);
             _dw[i] = (_dz[i] * _a[i - 1].transpose()) / m;

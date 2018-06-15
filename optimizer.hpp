@@ -6,7 +6,6 @@
 #include <vector>
 #include <type_traits>
 #include <stdexcept>
-#include <iostream>
 
 
 namespace optimizer {
@@ -94,8 +93,8 @@ public:
         for (size_t i = 1; i < w.size(); ++i) {
             _sdw[i] = _beta * _sdw[i] + (1. - _beta) * (dw[i] ^ dw[i]);          
             _sdb[i] = _beta * _sdb[i] + (1. - _beta) * (db[i] ^ db[i]);          
-            w[i] -= _alpha * (dw[i] % matlib::xsqrt(_sdw[i] + 1e-8));
-            b[i] -= _alpha * (db[i] % matlib::xsqrt(_sdb[i] + 1e-8));
+            w[i] -= _alpha * (dw[i] / matlib::xsqrt(_sdw[i] + 1e-8));
+            b[i] -= _alpha * (db[i] / matlib::xsqrt(_sdb[i] + 1e-8));
         }
     }
 };
@@ -137,8 +136,8 @@ public:
             _sdw[i] = _beta2 * _sdw[i] + (1. - _beta2) * (dw[i] ^ dw[i]);          
             _sdb[i] = _beta2 * _sdb[i] + (1. - _beta2) * (db[i] ^ db[i]);          
 
-            w[i] -= _alpha * ((_vdw[i] / (1. - _biased_beta1)) % matlib::xsqrt((_sdw[i] / (1. - _biased_beta2)) + 1e-8));
-            b[i] -= _alpha * ((_vdb[i] / (1. - _biased_beta1)) % matlib::xsqrt((_sdb[i] / (1. - _biased_beta2)) + 1e-8));
+            w[i] -= _alpha * ((_vdw[i] / (1. - _biased_beta1)) / matlib::xsqrt((_sdw[i] / (1. - _biased_beta2)) + 1e-8));
+            b[i] -= _alpha * ((_vdb[i] / (1. - _biased_beta1)) / matlib::xsqrt((_sdb[i] / (1. - _biased_beta2)) + 1e-8));
         }
     }
 };
